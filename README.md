@@ -33,7 +33,7 @@ pip install cookiecutter
 Now run it against this repo:
 
 ```
-cookiecutter https://git.irdpk.ir/open_data/django_base.git
+cookiecutter https://github.com/saeedmzr/base-django-template
 ```
 
 You'll be prompted for some values. Provide them, then a Django project will be created for you.
