@@ -1,16 +1,21 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 
+from .enums import UserRoleEnum
 from ..base.models import BaseModel
 from .managers import UserManager
+from auditlog.registry import auditlog
 
 
 class User(BaseModel, AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default=True)
-    is_admin = models.BooleanField(default=False)
     username = models.CharField(max_length=255, unique=True)
     email = models.EmailField(unique=True)
-
+    role = models.CharField(
+        max_length=20,
+        choices=UserRoleEnum.choices(),
+        default=UserRoleEnum.VIEWER.value,
+    )
     objects = UserManager()
 
     USERNAME_FIELD = 'username'
@@ -19,9 +24,15 @@ class User(BaseModel, AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         return self.username
 
+    @property
     def is_staff(self):
-        return self.is_admin
+        return self.role == UserRoleEnum.ADMIN.value
 
+    @property
+    def is_superuser(self):
+        return self.role == UserRoleEnum.ADMIN.value
+
+auditlog.register(User, exclude_fields=['password', 'updated_at'])
 
 class Profile(BaseModel):
     user = models.OneToOneField(User, on_delete=models.CASCADE)

@@ -1,0 +1,41 @@
+[
+  {
+    "model": "users.user",
+    "pk": 101,
+    "fields": {
+      "username": "adminuser",
+      "email": "admin@example.com",
+      "role": "admin",
+      "is_active": true,
+      "password": "bcrypt_sha256$$2b$12$TuxhBW3UoYk4JOcGzO4LQepAiRMefKn.4Kcu4d2qw7UPzWRM2JwQi",
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "users.user",
+    "pk": 102,
+    "fields": {
+      "username": "editoruser",
+      "email": "editor@example.com",
+      "role": "editor",
+      "is_active": true,
+      "password": "bcrypt_sha256$$2b$12$TuxhBW3UoYk4JOcGzO4LQepAiRMefKn.4Kcu4d2qw7UPzWRM2JwQi",
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "users.user",
+    "pk": 103,
+    "fields": {
+      "username": "vieweruser",
+      "email": "viewer@example.com",
+      "role": "viewer",
+      "is_active": true,
+      "password": "bcrypt_sha256$$2b$12$TuxhBW3UoYk4JOcGzO4LQepAiRMefKn.4Kcu4d2qw7UPzWRM2JwQi",
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  }
+]

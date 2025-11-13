@@ -2,10 +2,10 @@ from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 
+from ..base.permissions import IsAdmin, IsViewer, IsEditor
 from ..base.services import BaseService
 from ..base.views import BaseViewSet
 from ..base.responses import Response
-from ..base.permissions import IsAdminPermission
 from .serializers import UserSerializer
 from .services import UserService
 
@@ -18,7 +18,7 @@ class UserViewSet(BaseViewSet):
         return UserService()
 
     def list(self, request, *args, **kwargs):
-        self.permission_classes = [IsAdminPermission]
+        self.permission_classes = [IsViewer]
         self.check_permissions(request)
 
         data = self._service.get_all()
@@ -39,9 +39,8 @@ class UserViewSet(BaseViewSet):
         )
 
     def retrieve(self, request, *args, **kwargs):
-        self.permission_classes = [IsAdminPermission]
+        self.permission_classes = [IsViewer]
         self.check_permissions(request)
-
         id = kwargs.get('pk')
         data = self._service.get_by_id(id)
         return Response(
@@ -51,6 +50,8 @@ class UserViewSet(BaseViewSet):
         )
 
     def create(self, request, *args, **kwargs):
+        self.permission_classes = [IsAdmin]
+        self.check_permissions(request)
         user = self._service.create(request.data)
         return Response(
             data={
@@ -59,6 +60,8 @@ class UserViewSet(BaseViewSet):
         )
 
     def update(self, request, *args, **kwargs):
+        self.permission_classes = [IsEditor]
+        self.check_permissions(request)
         id = kwargs.get('pk')
         updated_user = self._service.update(id, request.data)
         return Response(
@@ -68,7 +71,7 @@ class UserViewSet(BaseViewSet):
         )
 
     def destroy(self, request, *args, **kwargs):
-        self.permission_classes = [IsAdminPermission]
+        self.permission_classes = [IsAdmin]
         self.check_permissions(request)
 
         id = kwargs.get('pk')

@@ -7,6 +7,7 @@ https://docs.djangoproject.com/en/4.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
+from pathlib import Path
 
 from ..env import env
 
@@ -38,6 +39,9 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+
+STATIC_ROOT = BASE_DIR / 'static'
 STATIC_URL = '/static/'
 
 # Default primary key field type
@@ -76,6 +80,9 @@ THIRD_PARTY_APPS = [
 {%- if cookiecutter.use_jwt == 'y' %}
     'rest_framework_simplejwt',
 {%- endif %}
+{%- if cookiecutter.use_auditlog == 'y' %}
+    'auditlog',
+{%- endif %}
 ]
 
 LOCAL_APPS = [
@@ -98,6 +105,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'corsheaders.middleware.CorsMiddleware',
+    'auditlog.middleware.AuditlogMiddleware'
+
 ]
 
 # endregion --------------------------------------------------------------------
