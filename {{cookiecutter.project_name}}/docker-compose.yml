@@ -12,7 +12,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data/
     networks:
-      - web
+      - web_{{cookiecutter.project_slug}}
 
   pgadmin:
     image: dpage/pgadmin4
@@ -24,62 +24,121 @@ services:
       - .env
     depends_on:
       - db
-  
-  web:
+    networks:
+      - web_{{cookiecutter.project_slug}}
+
+  app:
     build:
       context: .
       dockerfile: docker/Dockerfile
-    container_name: django-web
+    container_name: app
     command: >
       sh -c 'python manage.py makemigrations &&
              python manage.py migrate &&
+             python manage.py collectstatic --no-input &&
              python manage.py runserver 0.0.0.0:8000'
     restart: always
     ports:
       - '8000:8000'
     env_file:
       - .env
+    volumes:
+      - .:/app
     depends_on:
       - db
     networks:
-      - web
+      - web_{{cookiecutter.project_slug}}
   {%- if cookiecutter.use_celery == 'y' %}
 
   celery-worker:
     build:
       context: .
+      dockerfile: docker/Dockerfile
     command: celery -A {{cookiecutter.project_slug}} worker --loglevel=info
     env_file:
       - .env
     depends_on:
-      - web
+      - app
     networks:
-      - web
+      - web_{{cookiecutter.project_slug}}
 
   celery-beat:
     build:
       context: .
+      dockerfile: docker/Dockerfile
     command: celery -A {{cookiecutter.project_slug}} beat --loglevel=info
     env_file:
       - .env
     depends_on:
-      - web
+      - app
     networks:
-      - web
-
+      - web_{{cookiecutter.project_slug}}
   flower:
-    image: mher/flower
-    command: celery -A {{cookiecutter.project_slug}} flower
-    ports:
-      - '5555:5555'
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: flower
+    command: celery -A {{cookiecutter.project_slug}} flower --loglevel=info --port=5555
+    env_file:
+      - .env
     depends_on:
       - celery-worker
+    ports:
+      - '5555:5555'
     networks:
-      - web
+      - web_{{cookiecutter.project_slug}}
+  {%- endif %}
+
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    restart: always
+    ports:
+      - '8070:80'
+      - '443:443'
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./docker/nginx/certs:/etc/nginx/certs
+    depends_on:
+      - app
+    networks:
+      - web_{{cookiecutter.project_slug}}
+
+  redis:
+    image: redis:latest
+    networks:
+      - web_{{cookiecutter.project_slug}}
+    ports:
+      - 6379:6379
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
+
+  {%- if cookiecutter.use_minio == 'y' %}
+  minio:
+    image: minio/minio
+    container_name: minio
+    restart: always
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address :9001
+    networks:
+      - web_{{cookiecutter.project_slug}}
   {%- endif %}
 
 volumes:
   postgres_data:
+  minio_data:
+  redis_data:
 
 networks:
-  web:
+  web_{{cookiecutter.project_slug}}:

@@ -7,6 +7,8 @@ https://docs.djangoproject.com/en/4.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
+import os
+from pathlib import Path
 
 from ..env import env
 
@@ -38,6 +40,14 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+
+CSRF_TRUSTED_ORIGINS = [
+    "*"
+]
+
+
+STATIC_ROOT = BASE_DIR / 'static'
 STATIC_URL = '/static/'
 
 # Default primary key field type
@@ -76,6 +86,15 @@ THIRD_PARTY_APPS = [
 {%- if cookiecutter.use_jwt == 'y' %}
     'rest_framework_simplejwt',
 {%- endif %}
+{%- if cookiecutter.use_auditlog == 'y' %}
+    'auditlog',
+{%- endif %}
+{%- if cookiecutter.use_channels == 'y' %}
+    'channels',
+{%- endif %}
+{%- if cookiecutter.use_minio == 'y' %}
+    'storages',
+{%- endif %}
 ]
 
 LOCAL_APPS = [
@@ -98,9 +117,62 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'corsheaders.middleware.CorsMiddleware',
+    {%- if cookiecutter.use_auditlog == 'y' %}
+        'auditlog.middleware.AuditlogMiddleware',
+    {%- endif %}
+
 ]
 
 # endregion --------------------------------------------------------------------
+
+{%- if cookiecutter.use_minio == 'y' %}
+# region MINIO ------------------------------------------------------------------
+
+DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+
+AWS_ACCESS_KEY_ID = os.environ.get("MINIO_ROOT_USER")
+AWS_SECRET_ACCESS_KEY = os.environ.get("MINIO_ROOT_PASSWORD")
+
+# Bucket you created in MinIO UI
+AWS_STORAGE_BUCKET_NAME = os.environ.get("MINIO_BUCKET_NAME", "documents")
+
+# Internal URL (from Django container to MinIO container)
+AWS_S3_ENDPOINT_URL = os.environ.get("MINIO_ENDPOINT_URL", "http://localhost:9000")
+
+# Region name is required by django-storages/boto3 even for MinIO
+AWS_S3_REGION_NAME = os.environ.get("MINIO_REGION_NAME", "us-east-1")
+
+# Typically MinIO doesn't need signature v4 quirks, so standard config works
+AWS_S3_OBJECT_PARAMETERS = {
+    "CacheControl": "max-age=86400",
+}
+
+# Optional: avoid ACL issues with modern S3 semantics
+AWS_DEFAULT_ACL = None
+
+# If you want absolute URLs when accessing `file.url`:
+MEDIA_URL = "/media/"  # you can leave this; presigned URLs you generate will override
+MINIO_EXPOSE_URL = os.environ.get("MINIO_EXPOSE_URL", "http://localhost:9000")
+MINIO_EXPIRE_IN = os.environ.get("MINIO_EXPIRE_IN", "http://localhost:9000")
+# endregion --------------------------------------------------------------------
+{%- endif %}
+
+{%- if cookiecutter.use_channels == 'y' %}
+# region CHANNELS ------------------------------------------------------------
+ASGI_APPLICATION = f"{cookiecutter.project_slug}.asgi.application"
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("redis", 6379)],
+        },
+    },
+}
+
+# endregion --------------------------------------------------------------------
+{%- endif %}
+
 
 # region DATABASES -------------------------------------------------------------
 
@@ -257,10 +329,12 @@ SIMPLE_JWT = {
 # region CELERY ----------------------------------------------------------------
 
 CELERY_BROKER_URL = env('CELERY_BROKER_URL')
-CELERY_RESULT_BACKEND = CELERY_BROKER_URL
+CELERY_RESULT_BACKEND = "django-db"
 CELERY_RESULT_EXTENDED = True
 CELERY_RESULT_BACKEND_ALWAYS_RETRY = True
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
-
+CELERY_TASK_ALWAYS_EAGER = True
+CELERY_TASK_EAGER_PROPAGATES = True
+CELERY_TASK_STORE_EAGER_RESULT = True
 # endregion --------------------------------------------------------------------
 {%- endif %}

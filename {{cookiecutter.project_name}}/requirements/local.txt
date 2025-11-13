@@ -1,9 +1,9 @@
 -r base.txt
 
-django-debug-toolbar==4.4.6
-django-stubs==5.0.4
-djangorestframework-stubs==3.15.0
-pytest==8.3.2
-pytest-django==4.9.0
-pytest-sugar==1.0.0
-mypy==1.11.2
+django-debug-toolbar~=4.4.6
+django-stubs~=5.0.4
+djangorestframework-stubs~=3.15.0
+pytest~=8.3.2
+pytest-django~=4.9.0
+pytest-sugar~=1.0.0
+mypy~=1.11.2
